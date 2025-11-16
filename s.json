@@ -1,0 +1,183 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "layerTypes": [
+          {
+            "id": 104,
+            "type": 212
+          },
+          {
+            "id": 106,
+            "type": 212
+          },
+          {
+            "id": 206,
+            "type": 212
+          },
+          {
+            "id": 208,
+            "type": 212
+          }
+        ],
+        "idTo": 436704,
+        "length": 1798,
+        "nameTo": "ALGECIRAS",
+        "idFrom": 665416,
+        "propertyDisplayType": "layers",
+        "id": 1411518,
+        "nameFrom": "Algeciras Port",
+        "modelType": "SectionEntity",
+        "type": 212,
+        "propertyDisplayValue": [
+          "104",
+          "106",
+          "206",
+          "208"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-5.441095, 36.122687],
+          ...
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layerTypes": [
+          {
+            "id": 104,
+            "type": 212
+          },
+          {
+            "id": 106,
+            "type": 212
+          },
+          {
+            "id": 206,
+            "type": 212
+          },
+          {
+            "id": 208,
+            "type": 212
+          }
+        ],
+        "idTo": 436704,
+        "length": 564,
+        "nameTo": "ALGECIRAS",
+        "idFrom": 665415,
+        "propertyDisplayType": "layers",
+        "id": 1411517,
+        "nameFrom": "Algeciras Terminal",
+        "modelType": "SectionEntity",
+        "type": 212,
+        "propertyDisplayValue": [
+          "104",
+          "106",
+          "206",
+          "208"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-5.448969, 36.126452],
+          ...
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layerTypes": [
+          {
+            "id": 104,
+            "type": 215
+          },
+          {
+            "id": 106,
+            "type": 215
+          },
+          {
+            "id": 206,
+            "type": 215
+          },
+          {
+            "id": 208,
+            "type": 215
+          }
+        ],
+        "idTo": 436702,
+        "length": 13852,
+        "nameTo": "SAN ROQUE-LA LINEA",
+        "idFrom": 436704,
+        "propertyDisplayType": "layers",
+        "id": 1392306,
+        "nameFrom": "ALGECIRAS",
+        "modelType": "SectionEntity",
+        "type": 215,
+        "propertyDisplayValue": [
+          "104",
+          "106",
+          "206",
+          "208"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-5.431961, 36.21361],
+          ...
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "layerTypes": [
+          {
+            "id": 104,
+            "type": 212
+          },
+          {
+            "id": 106,
+            "type": 212
+          },
+          {
+            "id": 206,
+            "type": 212
+          },
+          {
+            "id": 208,
+            "type": 212
+          }
+        ],
+        "idTo": 665446,
+        "length": 1730,
+        "nameTo": "San Roque Terminal",
+        "idFrom": 436702,
+        "propertyDisplayType": "layers",
+        "id": 1411550,
+        "nameFrom": "SAN ROQUE-LA LINEA",
+        "modelType": "SectionEntity",
+        "type": 212,
+        "propertyDisplayValue": [
+          "104",
+          "106",
+          "206",
+          "208"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-5.431961, 36.21361],
+          ...
+        ]
+      }
+    },
