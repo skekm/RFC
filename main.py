@@ -11,10 +11,10 @@ from PIL import Image, ImageDraw
 # CONFIG
 # ============================================================
 
-# Either load from a local file:
-GEOJSON_FILE = "cip_rfc_europe.geojson"   # put your downloaded FeatureCollection here
+# Local GeoJSON cache file (so you don't hammer CIP every time)
+GEOJSON_FILE = "cip_rfc_europe.geojson"
 
-# Or fetch directly from CIP (comment this out if you use a local file only)
+# CIP URL that returns the whole Europe RFC FeatureCollection (adjust if needed)
 CIP_GEOJSON_URL = (
     "https://cip.rne.eu/api/feature-collection/sections"
     "?source=cache"
@@ -28,20 +28,26 @@ CIP_GEOJSON_URL = (
     "&top=64.71857967286385"
 )
 
-# Approx Europe bbox (lon/lat) matching your request
+# Approx Europe bbox matching the CIP call (lon/lat)
 BBOX_LEFT   = -13.205890927977881
 BBOX_BOTTOM = 33.78523007002315
 BBOX_RIGHT  = 32.53507495564878
 BBOX_TOP    = 64.71857967286385
 
-# Zoom range to generate (keep as-is if you like)
+# Zoom range to generate
+# Increase MAX_ZOOM (e.g. to 14–15) for super crisp building-level detail
 MIN_ZOOM = 4
-MAX_ZOOM = 10
+MAX_ZOOM = 14
 
-# Output directory for tiles
+# Output directory for XYZ tiles
 OUTPUT_ROOT = Path("tiles")
 
-# Corridor colours (your exact palette)
+TILE_SIZE = 256
+
+# ============================================================
+# RFC COLOURS (exact values you provided)
+# ============================================================
+
 RFC_COLORS = {
     "131": (255, 102,   0),  # Amber – #ff6600
     "132": (255,  51, 136),  # Alpine-Western Balkan – #ff3388
@@ -56,10 +62,7 @@ RFC_COLORS = {
     "101": (195,  34,  40),  # Rhine-Alpine – #c32228
 }
 
-# Fallback colour if a feature has none of the above IDs
-DEFAULT_COLOR = (200, 200, 200)
-
-TILE_SIZE = 256
+DEFAULT_COLOR = (200, 200, 200)  # fallback if nothing matches
 
 
 # ============================================================
@@ -91,7 +94,6 @@ def latlon_to_world_px(lat, lon, z):
 def latlon_to_tile_px(lat, lon, z, x_tile, y_tile):
     """
     WGS84 → pixel inside a specific tile (0–255, 0–255).
-    IMPORTANT: keep floats for max precision (no int() here).
     """
     world_x, world_y = latlon_to_world_px(lat, lon, z)
     px = world_x - x_tile * TILE_SIZE
@@ -189,9 +191,6 @@ def bbox_intersects(a, b):
     """
     Check if two lon/lat bboxes intersect: a=(l,b,r,t), b=(l,b,r,t)
     """
-    if b is None:
-        return False
-
     a_left, a_bottom, a_right, a_top = a
     b_left, b_bottom, b_right, b_top = b
 
@@ -207,23 +206,20 @@ def bbox_intersects(a, b):
 
 def line_width_for_zoom(z):
     """
-    Thicker when zoomed out, thinner when zoomed in.
+    Thicker at continent level, very thin at street/building level.
 
-    - At continent zoom (z around MIN_ZOOM), lines are a bit thicker
-      so they read well (≈15–20% bigger than before).
-    - At max zoom, lines are 1 px: very fine, following the track closely.
+    - At z <= 4 (continent-ish): thicker lines (~15–20% more than before)
+    - As you zoom in, width drops
+    - At highest zooms: 1 px (stick-thin, "tracks" the railway)
     """
-    # continent / full-Europe view
     if z <= 4:
-        return 3   # slightly beefier than typical 2px
-
-    # country / corridor scale
-    if 5 <= z <= 6:
-        return 2
-
-    # regional / city level (and higher)
-    if 7 <= z:
-        return 1
+        return 4  # continent / whole-Europe view
+    elif z <= 6:
+        return 3  # country / big region
+    elif z <= 8:
+        return 2  # regional / city
+    else:
+        return 1  # close-in / building level
 
 
 def draw_feature_on_tile(draw, feature, z, x_tile, y_tile, color, width):
@@ -235,9 +231,10 @@ def draw_feature_on_tile(draw, feature, z, x_tile, y_tile, color, width):
         pixels = []
         for lon, lat in line_coords:
             px, py = latlon_to_tile_px(lat, lon, z, x_tile, y_tile)
-            pixels.append((px, py))  # keep as floats
+            pixels.append((px, py))
 
         if len(pixels) >= 2:
+            # RGBA color: add alpha = 255
             draw.line(pixels, fill=color + (255,), width=width, joint="curve")
 
     if gtype == "LineString":
@@ -251,7 +248,7 @@ def draw_feature_on_tile(draw, feature, z, x_tile, y_tile, color, width):
 
 
 # ============================================================
-# MAIN
+# LOAD GEOJSON
 # ============================================================
 
 def load_geojson():
@@ -268,12 +265,16 @@ def load_geojson():
     resp.raise_for_status()
     data = resp.json()
 
-    # Optionally save for later
+    # Save for later runs
     with open(GEOJSON_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f)
 
     return data
 
+
+# ============================================================
+# MAIN
+# ============================================================
 
 def main():
     data = load_geojson()
@@ -285,15 +286,6 @@ def main():
     for f in features:
         fbbox = feature_bbox(f)
         feature_infos.append((f, fbbox))
-
-    # Remove old tiles if you want a clean rebuild
-    if OUTPUT_ROOT.exists():
-        print(f"Clearing old tiles in {OUTPUT_ROOT}...")
-        for root, dirs, files in os.walk(OUTPUT_ROOT, topdown=False):
-            for name in files:
-                os.remove(os.path.join(root, name))
-            for name in dirs:
-                os.rmdir(os.path.join(root, name))
 
     for z in range(MIN_ZOOM, MAX_ZOOM + 1):
         print(f"\n=== Generating zoom {z} ===")
@@ -314,13 +306,15 @@ def main():
 
                 # Draw any feature that intersects this tile
                 for f, fbbox in feature_infos:
+                    if fbbox is None:
+                        continue
                     if not bbox_intersects(tile_bbox, fbbox):
                         continue
 
                     color = get_corridor_color(f)
                     draw_feature_on_tile(draw, f, z, x, y, color, width)
 
-                # Skip completely empty tiles
+                # Skip tiles that are empty (fully transparent)
                 if img.getbbox() is None:
                     continue
 
@@ -328,6 +322,7 @@ def main():
                 out_dir.mkdir(parents=True, exist_ok=True)
                 out_path = out_dir / f"{y}.png"
                 img.save(out_path, format="PNG")
+                # print(f"Saved {out_path}")
 
     print("\nDone. Tiles are in:", OUTPUT_ROOT.resolve())
 
